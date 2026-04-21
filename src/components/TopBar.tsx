@@ -1,4 +1,4 @@
-import { Settings, LogOut, User } from "lucide-react";
+import { Moon, Sun, LogOut, User } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -23,12 +23,19 @@ export default function TopBar({ title = "Campus Companion" }: TopBarProps) {
     <header className="sticky top-0 z-40 flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground">
       <button
         onClick={toggleHighContrast}
-        aria-label={highContrast ? "Disable high contrast mode" : "Enable high contrast mode"}
+        aria-label={highContrast ? "Switch to light theme" : "Switch to dark theme"}
         className="rounded-lg p-2 transition-colors hover:bg-primary-foreground/20"
       >
-        <Settings className="h-5 w-5" />
+        {highContrast ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
       </button>
-      <h1 className="text-lg font-bold">{title}</h1>
+      <div className="flex items-center gap-2">
+        <img
+          src={highContrast ? "/tudublin-logo.png" : "/tudublin-logo-color.png"}
+          alt="Technological University Dublin logo"
+          className="h-6 w-auto object-contain"
+        />
+        <h1 className="text-lg font-bold">{title}</h1>
+      </div>
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}

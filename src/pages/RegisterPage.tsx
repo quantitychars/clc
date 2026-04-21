@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { courses } from "@/data/courses";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -9,6 +10,7 @@ export default function RegisterPage() {
   const [courseId, setCourseId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { login } = useAuth();
+  const { highContrast } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,8 +30,12 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md animate-fade-in">
-        <div className="mx-auto mb-6 flex h-20 w-48 items-center justify-center rounded-lg border-2 border-dashed border-border">
-          <span className="text-sm font-bold text-muted-foreground">TUD LOGO</span>
+        <div className="mx-auto mb-6 flex items-center justify-center">
+          <img
+            src={highContrast ? "/tudublin-logo.png" : "/tudublin-logo-color.png"}
+            alt="Technological University Dublin logo"
+            className="h-20 w-auto rounded-lg object-contain"
+          />
         </div>
         <h1 className="text-center text-3xl font-bold text-foreground">Campus Companion</h1>
         <p className="mb-8 text-center text-muted-foreground">Create your account</p>

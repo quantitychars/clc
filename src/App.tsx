@@ -11,6 +11,8 @@ import DashboardPage from "./pages/DashboardPage";
 import EventsPage from "./pages/EventsPage";
 import MapPage from "./pages/MapPage";
 import HelpPage from "./pages/HelpPage";
+import MobileLogoPreviewPage from "./pages/MobileLogoPreviewPage";
+import MobileAppPreviewPage from "./pages/MobileAppPreviewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ function AppRoutes() {
       <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
       <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute><HelpPage /></ProtectedRoute>} />
+      <Route path="/mobile-preview" element={<MobileLogoPreviewPage />} />
+      <Route path="/mobile-app-preview" element={<MobileAppPreviewPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
