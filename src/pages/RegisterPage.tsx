@@ -7,23 +7,39 @@ import { useTheme } from "@/context/ThemeContext";
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [courseId, setCourseId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { login } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const { register } = useAuth();
   const { highContrast } = useTheme();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Name is required";
     if (!email.trim()) errs.email = "Email is required";
+    if (!password || password.length < 6) errs.password = "Password must be at least 6 characters";
     if (!courseId) errs.course = "Please select a course";
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
+    setSubmitting(true);
     const course = courses.find((c) => c.courseId === courseId);
-    login({ name: name.trim(), email: email.trim(), courseId, courseName: course?.courseName || "", interests: [] });
+    const { error } = await register(
+      name.trim(),
+      email.trim(),
+      password,
+      courseId,
+      course?.courseName || ""
+    );
+    setSubmitting(false);
+
+    if (error) {
+      setErrors({ form: error });
+      return;
+    }
     navigate("/dashboard");
   };
 
@@ -41,42 +57,73 @@ export default function RegisterPage() {
         <p className="mb-8 text-center text-muted-foreground">Create your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {errors.form && (
+            <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
+              {errors.form}
+            </p>
+          )}
+
           <div>
-            <label htmlFor="name" className="sr-only">Full name</label>
+            <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">Full Name</label>
             <input
-              id="name" type="text" placeholder="Full name" value={name}
+              id="name" type="text" placeholder="Jane Smith" value={name}
               onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
               className="w-full rounded-pill border border-input bg-card px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "name-error" : undefined}
             />
-            {errors.name && <p className="mt-1 text-sm text-destructive" role="alert">{errors.name}</p>}
+            {errors.name && <p id="name-error" className="mt-1 text-sm text-destructive" role="alert">{errors.name}</p>}
           </div>
+
           <div>
-            <label htmlFor="email" className="sr-only">Student Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Student Email</label>
             <input
-              id="email" type="email" placeholder="Student Email" value={email}
+              id="email" type="email" placeholder="you@mytudublin.ie" value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               className="w-full rounded-pill border border-input bg-card px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
             />
-            {errors.email && <p className="mt-1 text-sm text-destructive" role="alert">{errors.email}</p>}
+            {errors.email && <p id="email-error" className="mt-1 text-sm text-destructive" role="alert">{errors.email}</p>}
           </div>
+
           <div>
-            <label htmlFor="course" className="sr-only">Select course</label>
+            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">Password</label>
+            <input
+              id="password" type="password" placeholder="At least 6 characters" value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              className="w-full rounded-pill border border-input bg-card px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
+            />
+            {errors.password && <p id="password-error" className="mt-1 text-sm text-destructive" role="alert">{errors.password}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="course" className="block text-sm font-medium text-foreground mb-1">Course</label>
             <select
               id="course" value={courseId} onChange={(e) => setCourseId(e.target.value)}
               className="w-full rounded-pill border border-input bg-card px-5 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
               aria-invalid={!!errors.course}
+              aria-describedby={errors.course ? "course-error" : undefined}
             >
-              <option value="" disabled>Select course</option>
+              <option value="" disabled>Select your course</option>
               {courses.map((c) => (
                 <option key={c.courseId} value={c.courseId}>{c.courseName}</option>
               ))}
             </select>
-            {errors.course && <p className="mt-1 text-sm text-destructive" role="alert">{errors.course}</p>}
+            {errors.course && <p id="course-error" className="mt-1 text-sm text-destructive" role="alert">{errors.course}</p>}
           </div>
-          <button type="submit" className="w-full rounded-pill bg-primary py-3 font-semibold text-primary-foreground transition-colors hover:opacity-90">
-            Create Account
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-pill bg-primary py-3 font-semibold text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-60"
+          >
+            {submitting ? "Creating account…" : "Create Account"}
           </button>
         </form>
 

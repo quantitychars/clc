@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopBar from "@/components/TopBar";
 import NavBar from "@/components/NavBar";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 
 interface Ticket {
   id: number;
   subject: string;
   description: string;
   status: "Pending" | "Resolved";
-  date: string;
+  created_at: string;
 }
 
 const resources = [
@@ -27,32 +29,56 @@ const faqs = [
 ];
 
 export default function HelpPage() {
+  const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingTickets, setLoadingTickets] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load tickets from Supabase
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("help_tickets")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setTickets(data as Ticket[]);
+        setLoadingTickets(false);
+      });
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
     if (!subject.trim()) errs.subject = "Subject is required";
     if (!description.trim()) errs.description = "Description is required";
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (Object.keys(errs).length || !user) return;
 
-    setTickets([
-      { id: Date.now(), subject: subject.trim(), description: description.trim(), status: "Pending", date: new Date().toLocaleDateString("en-IE") },
-      ...tickets,
-    ]);
-    setSubject("");
-    setDescription("");
+    setSubmitting(true);
+    const { data, error } = await supabase
+      .from("help_tickets")
+      .insert({ user_id: user.id, subject: subject.trim(), description: description.trim() })
+      .select()
+      .single();
+    setSubmitting(false);
+
+    if (!error && data) {
+      setTickets([data as Ticket, ...tickets]);
+      setSubject("");
+      setDescription("");
+    }
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar title="Helpdesk" />
-      <main className="mx-auto max-w-4xl px-4 py-6">
+      <main id="main-content" className="mx-auto max-w-4xl px-4 py-6">
         <div className="grid gap-6 md:grid-cols-2">
           {/* Left panel */}
           <div>
@@ -61,7 +87,7 @@ export default function HelpPage() {
               {resources.map((r) => (
                 <li key={r.name}>
                   <a href={r.url} className="flex items-center gap-2 rounded-lg border border-border bg-card p-3 text-primary hover:bg-muted transition-colors">
-                    <ExternalLink className="h-4 w-4" /> {r.name}
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" /> {r.name}
                   </a>
                 </li>
               ))}
@@ -75,12 +101,21 @@ export default function HelpPage() {
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="flex w-full items-center justify-between p-3 text-left text-sm font-medium text-foreground hover:bg-muted"
                     aria-expanded={openFaq === i}
+                    aria-controls={`faq-panel-${i}`}
+                    id={`faq-btn-${i}`}
                   >
                     {faq.q}
-                    {openFaq === i ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                    {openFaq === i
+                      ? <ChevronUp className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      : <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />}
                   </button>
                   {openFaq === i && (
-                    <p className="border-t border-border px-3 py-3 text-sm text-muted-foreground animate-fade-in">{faq.a}</p>
+                    <p
+                      id={`faq-panel-${i}`}
+                      role="region"
+                      aria-labelledby={`faq-btn-${i}`}
+                      className="border-t border-border px-3 py-3 text-sm text-muted-foreground animate-fade-in"
+                    >{faq.a}</p>
                   )}
                 </div>
               ))}
@@ -92,32 +127,40 @@ export default function HelpPage() {
             <h2 className="text-lg font-semibold text-foreground">Submit a Ticket</h2>
             <form onSubmit={handleSubmit} className="mt-3 space-y-3">
               <div>
-                <label htmlFor="ticket-subject" className="sr-only">Subject</label>
+                <label htmlFor="ticket-subject" className="block text-sm font-medium text-foreground mb-1">Subject</label>
                 <input
-                  id="ticket-subject" type="text" placeholder="Subject" value={subject}
+                  id="ticket-subject" type="text" placeholder="Briefly describe your issue" value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   className="w-full rounded-lg border border-input bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   aria-invalid={!!errors.subject}
+                  aria-describedby={errors.subject ? "ticket-subject-error" : undefined}
                 />
-                {errors.subject && <p className="mt-1 text-sm text-destructive" role="alert">{errors.subject}</p>}
+                {errors.subject && <p id="ticket-subject-error" className="mt-1 text-sm text-destructive" role="alert">{errors.subject}</p>}
               </div>
               <div>
-                <label htmlFor="ticket-desc" className="sr-only">Description</label>
+                <label htmlFor="ticket-desc" className="block text-sm font-medium text-foreground mb-1">Description</label>
                 <textarea
-                  id="ticket-desc" placeholder="Description" rows={4} value={description}
+                  id="ticket-desc" placeholder="Provide more detail here…" rows={4} value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full rounded-lg border border-input bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   aria-invalid={!!errors.description}
+                  aria-describedby={errors.description ? "ticket-desc-error" : undefined}
                 />
-                {errors.description && <p className="mt-1 text-sm text-destructive" role="alert">{errors.description}</p>}
+                {errors.description && <p id="ticket-desc-error" className="mt-1 text-sm text-destructive" role="alert">{errors.description}</p>}
               </div>
-              <button type="submit" className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 transition-colors">
-                Submit
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 transition-colors disabled:opacity-60"
+              >
+                {submitting ? "Submitting…" : "Submit"}
               </button>
             </form>
 
             <h3 className="mt-6 text-lg font-semibold text-foreground">My Open Tickets</h3>
-            {tickets.length === 0 ? (
+            {loadingTickets ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading tickets…</p>
+            ) : tickets.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">No tickets yet</p>
             ) : (
               <div className="mt-3 space-y-2">
@@ -125,7 +168,9 @@ export default function HelpPage() {
                   <div key={t.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
                     <div>
                       <p className="font-medium text-foreground text-sm">{t.subject}</p>
-                      <p className="text-xs text-muted-foreground">{t.date}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(t.created_at).toLocaleDateString("en-IE")}
+                      </p>
                     </div>
                     <span className={`rounded-pill px-3 py-1 text-xs font-bold ${
                       t.status === "Pending" ? "bg-warning text-warning-foreground" : "bg-success text-success-foreground"

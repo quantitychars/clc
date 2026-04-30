@@ -6,17 +6,33 @@
     <title>Campus Companion – TU Dublin</title>
     <meta name="description" content="Campus Companion – your TU Dublin student portal for schedules, events, campus map and helpdesk." />
     <meta name="author" content="TU Dublin" />
-
     <meta property="og:title" content="Campus Companion – TU Dublin" />
     <meta property="og:description" content="Campus Companion – your TU Dublin student portal for schedules, events, campus map and helpdesk." />
     <meta property="og:type" content="website" />
+    <style>
+      /* Skip link: hidden until focused by keyboard (WCAG 2.4.1) */
+      #skip-link {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        z-index: 9999;
+        padding: 8px 16px;
+        background: #fff;
+        color: #000;
+        font-family: sans-serif;
+        font-size: 14px;
+        text-decoration: underline;
+        border-radius: 4px;
+        border: 2px solid #000;
+      }
+      #skip-link:focus {
+        top: 8px;
+        left: 8px;
+      }
+    </style>
   </head>
-
   <body>
-    <!-- Skip-to-content link for keyboard / screen-reader users (WCAG 2.4.1) -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-[9999] focus:m-2 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-black focus:underline">
-      Skip to main content
-    </a>
+    <a id="skip-link" href="#main-content">Skip to main content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

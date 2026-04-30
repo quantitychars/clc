@@ -44,7 +44,7 @@ export default function RegisterPage() {
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">Full Name</label>
             <input
-              id="name" type="text" placeholder="Jane Smith" value={name}
+              id="name" type="text" placeholder="Name" value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
               className="w-full rounded-pill border border-input bg-card px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -56,7 +56,7 @@ export default function RegisterPage() {
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">Student Email</label>
             <input
-              id="email" type="email" placeholder="you@mytudublin.ie" value={email}
+              id="email" type="email" placeholder="Email" value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               className="w-full rounded-pill border border-input bg-card px-5 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
