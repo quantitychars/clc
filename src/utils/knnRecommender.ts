@@ -7,8 +7,11 @@ function toVector(interests: string[]): number[] {
   return ALL_INTERESTS.map((cat) => (interests.includes(cat) ? 1 : 0));
 }
 
-function euclideanDistance(a: number[], b: number[]): number {
-  return Math.sqrt(a.reduce((sum, val, i) => sum + (val - b[i]) ** 2, 0));
+function cosineSimilarity(a: number[], b: number[]): number {
+  const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
+  const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+  const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+  return magA && magB ? dot / (magA * magB) : 0;
 }
 
 export function getKNNRecommendations(
@@ -21,13 +24,13 @@ export function getKNNRecommendations(
   const userVec = toVector(userInterests);
   console.log("[kNN] User feature vector:", userVec);
 
-  const distances = students.map((s) => ({
-    student: s,
-    distance: euclideanDistance(userVec, toVector(s.interests)),
-  }));
-  distances.sort((a, b) => a.distance - b.distance);
+const distances = students.map((s) => ({
+  student: s,
+  similarity: cosineSimilarity(userVec, toVector(s.interests)),
+}));
+  distances.sort((a, b) => b.similarity - a.similarity);
   const neighbours = distances.slice(0, k);
-  console.log("[kNN] Nearest neighbours:", neighbours.map((n) => ({ id: n.student.id, dist: n.distance.toFixed(2) })));
+  console.log("[kNN] Nearest neighbours:", neighbours.map((n) => ({ id: n.student.id, sim: n.similarity.toFixed(2) })));
 
   const eventCounts: Record<string, number> = {};
   neighbours.forEach(({ student }) => {
